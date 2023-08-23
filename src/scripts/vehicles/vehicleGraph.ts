@@ -64,7 +64,7 @@ export class VehicleGraph extends THREE.Group {
    * @param {Road | null} road
    */
 
-  updateTile(x: number, y: number, road: Road) {
+  updateTile(x: number, y: number, road: Road | null) {
     const existingTile = this.getTile(x, y);
     const leftTile = this.getTile(x - 1, y);
     const rightTile = this.getTile(x + 1, y);

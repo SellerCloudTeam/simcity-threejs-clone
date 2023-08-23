@@ -86,9 +86,11 @@ export class AssetManager {
     mesh.rotation.set(0, zone.rotation * DEG2RAD, 0);
     mesh.position.set(zone.x, 0, zone.y);
 
+
     // Tint building a dark color if it is abandoned
     if (zone.abandoned) {
-      // mesh.material.color = new THREE.Color(0x707070);
+      console.log("zone.abandoned", mesh.material)
+      mesh.material.color = new THREE.Color(0x707070);
     }
 
     return mesh;
