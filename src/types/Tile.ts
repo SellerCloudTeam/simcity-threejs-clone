@@ -1,9 +1,3 @@
-import { BuildingType } from "./Building";
+import { Tile } from "../scripts/tile";
 
-export type TileType = {
-  x: number;
-  y: number;
-  id: string;
-  terrain: string;
-  building: BuildingType | null;
-};
+export type TileType = Tile
