@@ -1,13 +1,13 @@
-import { Event } from "three";
 import { City } from "./city.js";
-import { SceneManager } from "./sceneManager";
-import { BuildingKind } from "../types/Building.js";
+import { Building } from "./buildings/building.js";
 import { Tile } from "./tile.js";
+import { SceneManager } from "./sceneManager.js";
 
 export class Game {
   selectedControl = document.getElementById("button-select");
   activeToolId = "select";
   isPaused = false;
+
   city: City;
   sceneManager: SceneManager;
 
@@ -15,10 +15,9 @@ export class Game {
    * The current focused object
    * @type {Building | Tile}
    */
-  focusedObject: Tile | null = null;
+  focusedObject = null;
   // Last time mouse was moved
-  // This was new Date(); before
-  lastMove = Date.now();
+  lastMove = new Date();
 
   constructor() {
     /**
@@ -26,48 +25,43 @@ export class Game {
      * @type {City}
      */
     this.city = new City(16);
+
     /**
      * The 3D game scene
      */
+    const loadingEl = document.getElementById("loading");
+
     this.sceneManager = new SceneManager(this.city, () => {
-      console.log("scene loaded");
-      const loading = document.getElementById("loading");
-
-      if (loading) loading.remove();
-
+      loadingEl && loadingEl.remove();
       this.sceneManager.start();
       setInterval(this.step.bind(this), 1000);
     });
 
-    const gameWindow = document.getElementById("render-target");
+    // Hookup event listeners
+    this.sceneManager.gameWindow.addEventListener(
+      "wheel",
+      this.sceneManager.cameraManager.onMouseScroll.bind(
+        this.sceneManager.cameraManager
+      ),
+      false
+    );
+    this.sceneManager.gameWindow.addEventListener(
+      "mousedown",
+      this.#onMouseDown.bind(this),
+      false
+    );
+    this.sceneManager.gameWindow.addEventListener(
+      "mousemove",
+      this.#onMouseMove.bind(this),
+      false
+    );
 
-    if (gameWindow) {
-      // Hookup event listeners
-      gameWindow.addEventListener(
-        "wheel",
-        this.sceneManager.cameraManager.onMouseScroll.bind(
-          this.sceneManager.cameraManager
-        ),
-        false
-      );
-      gameWindow.addEventListener(
-        "mousedown",
-        this.#onMouseDown.bind(this),
-        false
-      );
-      gameWindow.addEventListener(
-        "mousemove",
-        this.#onMouseMove.bind(this),
-        false
-      );
-
-      // Prevent context menu from popping up
-      gameWindow.addEventListener(
-        "contextmenu",
-        (event) => event.preventDefault(),
-        false
-      );
-    }
+    // Prevent context menu from popping up
+    this.sceneManager.gameWindow.addEventListener(
+      "contextmenu",
+      (event) => event.preventDefault(),
+      false
+    );
   }
 
   /**
@@ -87,16 +81,15 @@ export class Game {
    *
    * @param {*} event
    */
-  onToolSelected(event: Event) {
+  onToolSelected(event) {
     // Deselect previously selected button and selected this one
     if (this.selectedControl) {
       this.selectedControl.classList.remove("selected");
     }
-
     this.selectedControl = event.target;
-    this.selectedControl?.classList.add("selected");
+    this.selectedControl.classList.add("selected");
 
-    this.activeToolId = this.selectedControl?.getAttribute("data-type") ?? ""; //TODO: fix this ;
+    this.activeToolId = this.selectedControl.getAttribute("data-type");
     console.log(this.activeToolId);
   }
 
@@ -106,16 +99,10 @@ export class Game {
   togglePause() {
     this.isPaused = !this.isPaused;
     console.log(`Is Paused: ${this.isPaused}`);
-
-    // TODO: Fix this
-    const pauseButton = document.getElementById(
-      "pause-button"
-    ) as HTMLImageElement;
-
     if (this.isPaused) {
-      if (pauseButton) pauseButton.src = "/icons/play.png";
+      document.getElementById("pause-button-icon").src = "/icons/play.png";
     } else {
-      pauseButton.src = "/icons/pause.png";
+      document.getElementById("pause-button-icon").src = "/icons/pause.png";
     }
   }
 
@@ -123,7 +110,7 @@ export class Game {
    * Event handler for `mousedown` event
    * @param {MouseEvent} event
    */
-  #onMouseDown(event: Event) {
+  #onMouseDown(event) {
     // Check if left mouse button pressed
     if (event.button === 0) {
       const selectedObject = this.sceneManager.getSelectedObject(event);
@@ -137,7 +124,7 @@ export class Game {
    * Event handler for 'mousemove' event
    * @param {MouseEvent} event
    */
-  #onMouseMove(event: Event) {
+  #onMouseMove(event) {
     // Throttle event handler so it doesn't kill the browser
     if (Date.now() - this.lastMove < 1 / 60.0) return;
     this.lastMove = Date.now();
@@ -155,14 +142,13 @@ export class Game {
     this.sceneManager.cameraManager.onMouseMove(event);
   }
 
-  #useActiveTool(object: any) {
+  #useActiveTool(object) {
     // If no object is selected, clear the info panel
     if (!object) {
-      // This method was used with arg null before
-      this.#updateInfoPanel();
+      this.#updateInfoPanel(null);
       return;
     } else {
-      const tile = object.userData as Tile;
+      const tile = object.userData;
       if (this.activeToolId === "select") {
         this.sceneManager.setActiveObject(object);
         this.focusedObject = tile;
@@ -171,7 +157,7 @@ export class Game {
         this.city.bulldoze(tile.x, tile.y);
         this.sceneManager.applyChanges(this.city);
       } else if (!tile.building) {
-        const buildingType = this.activeToolId as BuildingKind;
+        const buildingType = this.activeToolId;
         this.city.placeBuilding(tile.x, tile.y, buildingType);
         this.sceneManager.applyChanges(this.city);
       }
@@ -179,20 +165,16 @@ export class Game {
   }
 
   #updateInfoPanel() {
-    const infoDetails = document.getElementById("info-details");
-    if (infoDetails) {
-      if (this.focusedObject && this.focusedObject?.toHTML) {
-        infoDetails.innerHTML = this.focusedObject.toHTML();
-      } else {
-        infoDetails.innerHTML = "";
-      }
+    if (this.focusedObject?.toHTML) {
+      document.getElementById("info-details").innerHTML =
+        this.focusedObject.toHTML();
+    } else {
+      document.getElementById("info-details").innerHTML = "";
     }
   }
 
   #updateTitleBar() {
-    const populationCounter = document.getElementById("population-counter");
-    if (populationCounter) {
-      populationCounter.innerHTML = this.city.getPopulation().toString();
-    }
+    document.getElementById("population-counter").innerHTML =
+      this.city.getPopulation();
   }
 }

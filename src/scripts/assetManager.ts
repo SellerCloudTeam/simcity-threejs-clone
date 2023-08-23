@@ -1,8 +1,8 @@
 import * as THREE from "three";
 import viteConfig from "../../vite.config";
+import { models } from "./models.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { Tile } from "./tile";
-import { models } from "./models";
 import { Zone } from "./buildings/zone";
 import { Road } from "./buildings/road";
 
@@ -19,7 +19,9 @@ export class AssetManager {
     grid: this.loadTexture(`${baseUrl}textures/grid.png`),
   };
 
-  meshes = {} as { [key: string]: THREE.Mesh };
+  meshes: {
+    [key: string]: THREE.Mesh;
+  } = {};
   modelCount: number;
   loadedModelCount: number;
   onLoad: () => void;
@@ -74,10 +76,10 @@ export class AssetManager {
    * @returns {THREE.Mesh} A mesh object
    */
   createZoneMesh(tile: Tile) {
-    const zone = tile.building as Zone;
+    const zone = tile.building as unknown as Zone;
 
-    let modelName = `${zone?.type}-${zone?.style}${zone?.level}`;
-    if (zone && zone.developed) {
+    let modelName = `${zone.type}-${zone.style}${zone.level}`;
+    if (zone.developed) {
       // TODO  modelName = 'under-construction';
     }
 
@@ -88,7 +90,8 @@ export class AssetManager {
 
     // Tint building a dark color if it is abandoned
     if (zone.abandoned) {
-      // mesh.material.color = new THREE.Color(0x707070);
+      // @ts-ignore
+      mesh.material.color = new THREE.Color(0x707070);
     }
 
     return mesh;
@@ -100,7 +103,7 @@ export class AssetManager {
    * @returns {THREE.Mesh} A mesh object
    */
   createRoadMesh(tile: Tile) {
-    const road = tile.building as Road;
+    const road = tile.building as unknown as Road;
     const mesh = this.cloneMesh(`${road.type}-${road.style}`);
     mesh.userData = tile;
     mesh.rotation.set(0, road.rotation * DEG2RAD, 0);
@@ -134,8 +137,10 @@ export class AssetManager {
     // This is so we can set the modify the texture of each
     // mesh independently (e.g. highlight on mouse over,
     // abandoned buildings, etc.))
-    mesh.traverse((obj) => {
-      if (obj instanceof THREE.Mesh && obj.material) {
+    mesh.traverse((obj: THREE.Object3D<THREE.Event>) => {
+      const material = obj.material as THREE.MeshLambertMaterial;
+
+      if (obj.material) {
         obj.material = obj.material.clone();
         obj.material.transparent = transparent;
       }
@@ -163,7 +168,7 @@ export class AssetManager {
   loadModel(
     name: string,
     {
-      filename = "",
+      filename,
       scale = 1,
       rotation = 0,
       receiveShadow = true,
@@ -176,12 +181,10 @@ export class AssetManager {
         let mesh = glb.scene.children[0].children[0];
 
         mesh.traverse((node) => {
-          if (node instanceof THREE.Mesh) {
-            node.material = new THREE.MeshLambertMaterial({
-              map: this.textures.base,
-              specularMap: this.textures.specular,
-            });
-          }
+          node.material = new THREE.MeshLambertMaterial({
+            map: this.textures.base,
+            specularMap: this.textures.specular,
+          });
         });
 
         mesh.position.set(0, 0, 0);
@@ -190,7 +193,6 @@ export class AssetManager {
         mesh.receiveShadow = receiveShadow;
         mesh.castShadow = castShadow;
 
-        // @ts-ignore
         this.meshes[name] = mesh;
 
         // Once all models are loaded

@@ -1,35 +1,40 @@
 import * as THREE from "three";
-import { CameraManager } from "./cameraManager";
-import { AssetManager } from "./assetManager";
-import { VehicleGraph } from "./vehicles/vehicleGraph";
-import { City } from "./city";
+import { CameraManager } from "./cameraManager.js";
+import { AssetManager } from "./assetManager.js";
+import { City } from "./city.js";
+import { VehicleGraph } from "./vehicles/vehicleGraph.js";
 
 /**
  * Manager for the Three.js scene. Handles rendering of a `City` object
  */
 export class SceneManager {
-  gameWindow: HTMLElement | null;
+  /**
+   * Initializes a new Scene object
+   * @param {City} city
+   */
+
   renderer: THREE.WebGLRenderer;
   scene: THREE.Scene;
+  gameWindow: HTMLElement | null;
   assetManager: AssetManager;
   cameraManager: CameraManager;
   buildings: THREE.Mesh[][];
   terrain: THREE.Mesh[][];
   raycaster: THREE.Raycaster;
   mouse: THREE.Vector2;
-  activeObject: THREE.Mesh;
-  hoverObject: THREE.Mesh;
 
-  /**
-   * Initializes a new Scene object
-   * @param {City} city
-   */
+  activeObject: THREE.Mesh | null;
+  hoverObject: THREE.Mesh | null;
+
   constructor(city: City, onLoad: () => void) {
     this.renderer = new THREE.WebGLRenderer({
       antialias: true,
     });
     this.scene = new THREE.Scene();
-    this.gameWindow = document.getElementById("render-target");
+
+    // we know the HTML element exists
+    this.gameWindow = document.getElementById("render-target")!;
+
     this.assetManager = new AssetManager(() => {
       console.log("assets loaded");
       this.#initialize(city);
@@ -75,7 +80,7 @@ export class SceneManager {
   /**
    * Initalizes the scene, clearing all existing assets
    */
-  #initialize(city) {
+  #initialize(city: City) {
     this.scene.clear();
 
     this.root = new THREE.Group();

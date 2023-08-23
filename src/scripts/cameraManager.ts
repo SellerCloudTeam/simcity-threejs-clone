@@ -21,7 +21,13 @@ const PAN_SENSITIVITY = -0.01;
 const Y_AXIS = new THREE.Vector3(0, 1, 0);
 
 export class CameraManager {
-  constructor(gameWindow) {
+  camera: THREE.OrthographicCamera;
+  cameraOrigin: THREE.Vector3;
+  cameraRadius: number;
+  cameraAzimuth: number;
+  cameraElevation: number;
+
+  constructor(gameWindow: HTMLElement) {
     const aspect = gameWindow.clientWidth / gameWindow.clientHeight;
 
     this.camera = new THREE.OrthographicCamera(
@@ -53,7 +59,7 @@ export class CameraManager {
    * Event handler for `mousemove` event
    * @param {MouseEvent} event Mouse event arguments
    */
-  onMouseMove(event) {
+  onMouseMove(event: THREE.Event) {
     // Handles the rotation of the camera
     if (event.buttons & RIGHT_MOUSE_BUTTON && !event.ctrlKey) {
       this.cameraAzimuth += -(event.movementX * AZIMUTH_SENSITIVITY);
@@ -76,14 +82,14 @@ export class CameraManager {
    * Event handler for `wheel` event
    * @param {MouseEvent} event Mouse event arguments
    */
-  onMouseScroll(event) {
+  onMouseScroll(event: THREE.Event) {
     this.cameraRadius *= 1 - (event.deltaY * ZOOM_SENSITIVITY);
     this.cameraRadius = Math.min(MAX_CAMERA_RADIUS, Math.max(MIN_CAMERA_RADIUS, this.cameraRadius));
 
     this.updateCameraPosition();
   }
 
-  resize(gameWindow) {
+  resize(gameWindow: HTMLElement) {
     const aspect = gameWindow.clientWidth / gameWindow.clientHeight;
     this.camera.left = (CAMERA_SIZE * aspect) / -2;
     this.camera.right = (CAMERA_SIZE * aspect) / 2;
