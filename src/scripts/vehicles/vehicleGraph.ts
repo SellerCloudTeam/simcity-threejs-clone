@@ -1,17 +1,17 @@
-import * as THREE from 'three';
-import { VehicleGraphTile } from './vehicleGraphTile.js';
-import { VehicleGraphHelper } from './vehicleGraphHelper.js';
-import { AssetManager } from '../assetManager.js';
-import config from '../config.js';
-import { Vehicle } from './vehicle.js';
-import { Road } from '../buildings/road.js';
+import * as THREE from "three";
+import { VehicleGraphTile } from "./vehicleGraphTile.js";
+import { VehicleGraphHelper } from "./vehicleGraphHelper.js";
+import { AssetManager } from "../assetManager.js";
+import config from "../config.js";
+import { Vehicle } from "./vehicle.js";
+import { Road } from "../buildings/road.js";
 
 export class VehicleGraph extends THREE.Group {
   constructor(size, assetManager) {
     super();
 
     this.size = size;
-    
+
     /**
      * @type {AssetManager}
      */
@@ -24,7 +24,7 @@ export class VehicleGraph extends THREE.Group {
 
     this.vehicles = new THREE.Group();
     this.add(this.vehicles);
-  
+
     /**
      * @type {VehicleGraphHelper}
      */
@@ -52,12 +52,13 @@ export class VehicleGraph extends THREE.Group {
   }
 
   /**
-   * 
+   *
    * @param {number} x
-   * @param {number} y 
-   * @param {Road | null} road 
+   * @param {number} y
+   * @param {Road | null} road
    */
-  updateTile(x, y, road) {
+
+  updateTile(x: number, y: number, road: Road | null) {
     const existingTile = this.getTile(x, y);
     const leftTile = this.getTile(x - 1, y);
     const rightTile = this.getTile(x + 1, y);
@@ -70,10 +71,10 @@ export class VehicleGraph extends THREE.Group {
     rightTile?.getWorldLeftSide()?.out?.disconnectAll();
     topTile?.getWorldBottomSide()?.out?.disconnectAll();
     bottomTile?.getWorldTopSide()?.out?.disconnectAll();
-    
+
     if (road) {
       const tile = VehicleGraphTile.create(x, y, road.rotation, road.style);
-      
+
       // Connect tile to adjacent tiles
       if (leftTile) {
         tile.getWorldLeftSide().out?.connect(leftTile.getWorldRightSide().in);
@@ -103,8 +104,8 @@ export class VehicleGraph extends THREE.Group {
   }
 
   /**
-   * @param {number} x 
-   * @param {number} y 
+   * @param {number} x
+   * @param {number} y
    * @returns {VehicleGraphTile}
    */
   getTile(x, y) {
@@ -128,7 +129,7 @@ export class VehicleGraph extends THREE.Group {
             origin,
             destination,
             this.assetManager.createRandomVehicleMesh()
-          )
+          );
 
           this.vehicles.add(vehicle);
         }
